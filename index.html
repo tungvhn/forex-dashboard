@@ -211,11 +211,12 @@ const US_BONDS = [
   { key:'us10y', fred:'DGS10', stooq:'us10yt.b', label:'10Y' },
   { key:'us30y', fred:'DGS30', stooq:'us30yt.b', label:'30Y' },
 ];
+// INT bonds: Yahoo Finance primary, Stooq proxy fallback
 const INT_BONDS = [
-  { key:'jp10y', stooq:'jp10yt.b', label:'JP 10Y', flag:'🇯🇵' },
-  { key:'de10y', stooq:'de10yt.b', label:'DE 10Y', flag:'🇩🇪' },
-  { key:'gb10y', stooq:'gb10yt.b', label:'GB 10Y', flag:'🇬🇧' },
-  { key:'au10y', stooq:'au10yt.b', label:'AU 10Y', flag:'🇦🇺' },
+  { key:'jp10y', yahoo:'%5ETMBMKJP-10Y', stooq:'jp10yt.b', label:'JP 10Y', flag:'🇯🇵' },
+  { key:'de10y', yahoo:'%5ETMBMKDE-10Y', stooq:'de10yt.b', label:'DE 10Y', flag:'🇩🇪' },
+  { key:'gb10y', yahoo:'%5ETMBMKGB-10Y', stooq:'gb10yt.b', label:'GB 10Y', flag:'🇬🇧' },
+  { key:'au10y', yahoo:'%5ETMBMKAU-10Y', stooq:'au10yt.b', label:'AU 10Y', flag:'🇦🇺' },
 ];
 
 /* ════════════════════════════════════════════════════════
@@ -390,8 +391,17 @@ async function loadBonds() {
     })
   );
 
-  /* INT bonds: Stooq (all parallel) */
+  /* INT bonds: Yahoo Finance primary, Stooq fallback */
   await Promise.allSettled(INT_BONDS.map(async b => {
+    // Try Yahoo Finance first
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${b.yahoo}?interval=1d&range=2d`;
+      const data = await fetchViaProxy(url);
+      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (price && !isNaN(price))
+        return results[b.key] = { val: price, date: new Date().toISOString().slice(0,10), src: 'yahoo' };
+    } catch {}
+    // Fallback: Stooq
     try {
       const text = await fetchViaProxy(
         `https://stooq.com/q/l/?s=${b.stooq}&f=sd2t2ohlcv&h&e=csv`, true);
@@ -433,9 +443,11 @@ async function loadBonds() {
   document.getElementById('bond-content').innerHTML = html;
 
   const fredCnt  = Object.values(results).filter(r => r?.src === 'fred').length;
+  const yahooCnt = Object.values(results).filter(r => r?.src === 'yahoo').length;
   const stooqCnt = Object.values(results).filter(r => r?.src === 'stooq').length;
   const parts = [];
   if (fredCnt)  parts.push(`<span class="live">● FRED</span> (${fredCnt})`);
+  if (yahooCnt) parts.push(`<span class="live">● Yahoo</span> (${yahooCnt})`);
   if (stooqCnt) parts.push(`<span class="live">● Stooq</span> (${stooqCnt})`);
   document.getElementById('bond-src').innerHTML = parts.join(' · ') || '<span class="stale">● Partial</span>';
 
