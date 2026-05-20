@@ -211,12 +211,12 @@ const US_BONDS = [
   { key:'us10y', fred:'DGS10', stooq:'us10yt.b', label:'10Y' },
   { key:'us30y', fred:'DGS30', stooq:'us30yt.b', label:'30Y' },
 ];
-// INT bonds: Yahoo Finance primary, Stooq proxy fallback
+// INT bonds: FRED via proxy (OECD monthly series — confirmed working from GitHub Pages)
 const INT_BONDS = [
-  { key:'jp10y', yahoo:'%5ETMBMKJP-10Y', stooq:'jp10yt.b', label:'JP 10Y', flag:'🇯🇵' },
-  { key:'de10y', yahoo:'%5ETMBMKDE-10Y', stooq:'de10yt.b', label:'DE 10Y', flag:'🇩🇪' },
-  { key:'gb10y', yahoo:'%5ETMBMKGB-10Y', stooq:'gb10yt.b', label:'GB 10Y', flag:'🇬🇧' },
-  { key:'au10y', yahoo:'%5ETMBMKAU-10Y', stooq:'au10yt.b', label:'AU 10Y', flag:'🇦🇺' },
+  { key:'jp10y', fred:'IRLTLT01JPM156N', label:'JP 10Y', flag:'🇯🇵' },
+  { key:'de10y', fred:'IRLTLT01DEM156N', label:'DE 10Y', flag:'🇩🇪' },
+  { key:'gb10y', fred:'IRLTLT01GBM156N', label:'GB 10Y', flag:'🇬🇧' },
+  { key:'au10y', fred:'IRLTLT01AUM156N', label:'AU 10Y', flag:'🇦🇺' },
 ];
 
 /* ════════════════════════════════════════════════════════
@@ -391,24 +391,9 @@ async function loadBonds() {
     })
   );
 
-  /* INT bonds: Yahoo Finance primary, Stooq fallback */
+  /* INT bonds: FRED via proxy (same as US bonds — confirmed working) */
   await Promise.allSettled(INT_BONDS.map(async b => {
-    // Try Yahoo Finance first
-    try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${b.yahoo}?interval=1d&range=2d`;
-      const data = await fetchViaProxy(url);
-      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (price && !isNaN(price))
-        return results[b.key] = { val: price, date: new Date().toISOString().slice(0,10), src: 'yahoo' };
-    } catch {}
-    // Fallback: Stooq
-    try {
-      const text = await fetchViaProxy(
-        `https://stooq.com/q/l/?s=${b.stooq}&f=sd2t2ohlcv&h&e=csv`, true);
-      const cols = text.trim().split('\n')[1]?.split(',') ?? [];
-      const val = parseFloat(cols[4]);
-      if (!isNaN(val)) results[b.key] = { val, date: cols[0], src: 'stooq' };
-    } catch {}
+    try { results[b.key] = await fetchFRED(b.fred, 3); } catch {}
   }));
 
   /* Render */
