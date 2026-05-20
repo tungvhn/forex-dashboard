@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forex Macro Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+      --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+      --green: #3fb950; --red: #f85149; --yellow: #d29922;
+      --blue: #388bfd; --purple: #bc8cff; --orange: #ffa657;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      font-size: 14px; line-height: 1.5;
+    }
+    .header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 12px 20px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 100;
+    }
+    .header h1 { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .header-right { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; }
+    .btn {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 5px 12px; border-radius: 6px;
+      cursor: pointer; font-size: 12px; transition: background .2s;
+    }
+    .btn:hover { background: var(--border); }
+    .ticker-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 8px 20px; display: flex; gap: 28px; overflow-x: auto;
+      font-size: 13px; white-space: nowrap;
+    }
+    .ticker-item { display: flex; align-items: center; gap: 6px; }
+    .ticker-label { color: var(--muted); font-size: 11px; }
+    .ticker-price { font-weight: 600; }
+    .up { color: var(--green); }
+    .down { color: var(--red); }
+    .neutral { color: var(--muted); }
+    .main { padding: 16px 20px; max-width: 1400px; margin: 0 auto; }
+    .mb { margin-bottom: 16px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .section-title {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px;
+    }
+    .data-src { font-size: 10px; color: var(--muted); margin-top: 8px; }
+    .data-src .live  { color: var(--green); }
+    .data-src .stale { color: var(--yellow); }
+    .data-src .fail  { color: var(--red); }
+    .dxy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .dxy-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .dxy-price { font-size: 32px; font-weight: 700; letter-spacing: -.5px; }
+    .dxy-change { font-size: 14px; margin-top: 2px; }
+    .dxy-meta { font-size: 11px; color: var(--muted); text-align: right; line-height: 1.8; }
+    .chart-wrap { position: relative; height: 200px; }
+    .bond-table { width: 100%; border-collapse: collapse; }
+    .bond-table th {
+      text-align: left; padding: 5px 8px; font-size: 10px; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border);
+    }
+    .bond-table td { padding: 7px 8px; border-bottom: 1px solid rgba(48,54,61,.5); font-size: 13px; }
+    .bond-table tr:last-child td { border-bottom: none; }
+    .bond-table .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .bond-group-header td { font-size: 10px; color: var(--muted); font-weight: 600; padding: 8px 8px 2px; border-bottom: none; }
+    .cb-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    @media (max-width: 700px) { .cb-grid { grid-template-columns: repeat(3, 1fr); } }
+    .cb-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+    .cb-name { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .cb-flag { font-size: 18px; margin: 4px 0 2px; }
+    .cb-rate { font-size: 20px; font-weight: 700; }
+    .cb-pct { font-size: 12px; font-weight: 400; }
+    .cb-dir { font-size: 11px; margin-top: 2px; }
+    .cb-updated { font-size: 9px; color: var(--muted); margin-top: 4px; }
+    .cpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+    @media (max-width: 700px) { .cpi-grid { grid-template-columns: repeat(3, 1fr); } }
+    .cpi-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; }
+    .cpi-flag { font-size: 20px; }
+    .cpi-cc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .cpi-val { font-size: 20px; font-weight: 700; margin: 4px 0 2px; }
+    .cpi-period { font-size: 9px; color: var(--muted); }
+    .cpi-hot  { color: var(--red); }
+    .cpi-warm { color: var(--orange); }
+    .cpi-cool { color: var(--green); }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid var(--border); border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .placeholder { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 8px; padding: 24px 0; }
+    .error-msg   { color: var(--muted); font-size: 12px; text-align: center; padding: 24px 0; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="live-dot"></span> Forex Macro Dashboard</h1>
+  <div class="header-right">
+    <span id="last-updated">Loading…</span>
+    <button class="btn" onclick="loadAll()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="ticker-bar" id="ticker-bar">
+  <div class="ticker-item"><span class="spinner"></span>&nbsp;Loading quotes…</div>
+</div>
+
+<div class="main">
+
+  <!-- ① CB Rates + CPI -->
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="section-title">Central Bank Policy Rates</div>
+      <div id="cb-content"><div class="placeholder"><span class="spinner"></span> Loading rates…</div></div>
+      <div class="data-src" id="cb-src"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">CPI Inflation — YoY % (IMF Data)</div>
+      <div id="cpi-cards"></div>
+      <div class="chart-wrap" style="height:170px"><canvas id="cpi-chart"></canvas></div>
+      <div class="data-src"><span class="stale">● Static</span> IMF CPI Dataset — downloaded May 2026</div>
+    </div>
+  </div>
+
+  <!-- ② DXY Chart — TradingView tv.js -->
+  <div class="dxy-card mb">
+    <div class="section-title" style="margin-bottom:8px">US Dollar Index — DXY</div>
+    <div class="tradingview-widget-container">
+      <div id="tradingview_dxy"></div>
+    </div>
+    <div class="data-src" id="dxy-src"><span class="live">● Live</span> TradingView</div>
+  </div>
+
+  <!-- ③ Bond Yields + Yield Curve -->
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="section-title">Government Bond Yields</div>
+      <div id="bond-content"><div class="placeholder"><span class="spinner"></span> Loading yields…</div></div>
+      <div class="data-src" id="bond-src"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">US Treasury Yield Curve</div>
+      <div class="chart-wrap"><canvas id="yield-curve-chart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   CONFIG
+   ════════════════════════════════════════════════════════ */
+const TWELVE_KEY = 'b31719b69a61499981ee3be336e68d15';
+const FRED_KEY   = '20952631f1f11f78a2adf090f82f82a4';
+
+/* ════════════════════════════════════════════════════════
+   STATIC — IMF CPI (downloaded 2026-05-20)
+   Series: *._T.YOY_PCH_PA_PT.M
+   ════════════════════════════════════════════════════════ */
+const CPI = {
+  labels: ['Feb 25','Mar 25','Apr 25','May 25','Jun 25','Jul 25','Aug 25',
+           'Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26'],
+  US: [2.82, 2.39, 2.31, 2.35, 2.67, 2.70, 2.92, 3.01, null, 2.74, 2.68, 2.39, 2.41, 3.26, 3.81],
+  EU: [2.29, 2.19, 2.10, 2.10, 2.01, 2.00, 2.17, 2.42, 2.33, 2.34, 1.83, 2.08, 1.90, 2.72, 2.88],
+  UK: [3.67, 3.42, 4.16, 3.99, 4.06, 4.21, 4.12, 4.04, 3.87, 3.57, 3.55, 3.18, 3.24, 3.45, null],
+  JP: [3.65, 3.64, 3.53, 3.42, 3.23, 3.04, 2.75, 2.85, 3.01, 2.91, 2.08, 1.53, 1.26, 1.44, null],
+  AU: [null, null, 2.37, 2.11, 1.89, 2.96, 3.17, 3.58, 3.81, 3.44, 3.76, 3.84, 3.73, 4.57, null],
+};
+const CPI_META = [
+  { key:'US', flag:'🇺🇸', cc:'US' }, { key:'EU', flag:'🇪🇺', cc:'EU' },
+  { key:'UK', flag:'🇬🇧', cc:'UK' }, { key:'JP', flag:'🇯🇵', cc:'JP' },
+  { key:'AU', flag:'🇦🇺', cc:'AU' },
+];
+function cpiLatest(key) {
+  const arr = CPI[key];
+  for (let i = arr.length - 1; i >= 0; i--)
+    if (arr[i] !== null) return { val: arr[i], period: CPI.labels[i] };
+  return { val: null, period: '—' };
+}
+
+/* ════════════════════════════════════════════════════════
+   STATIC FALLBACK — CB RATES (cbrates.com, scraped Dec 2025–May 2026)
+   ════════════════════════════════════════════════════════ */
+const CB_FALLBACK = [
+  { name:'Fed', flag:'🇺🇸', cc:'USD', rate:'3.50–3.75', dir:'↓', updated:'Dec 2025' },
+  { name:'ECB', flag:'🇪🇺', cc:'EUR', rate:'2.00',       dir:'↓', updated:'Jun 2025' },
+  { name:'BOE', flag:'🇬🇧', cc:'GBP', rate:'3.75',       dir:'↓', updated:'Dec 2025' },
+  { name:'BOJ', flag:'🇯🇵', cc:'JPY', rate:'0.75',       dir:'↑', updated:'Dec 2025' },
+  { name:'RBA', flag:'🇦🇺', cc:'AUD', rate:'4.35',       dir:'↓', updated:'May 2026' },
+];
+
+/* ════════════════════════════════════════════════════════
+   BOND DEFINITIONS
+   US bonds  → FRED primary (DGS series, authoritative, no limit)
+               fallback → Stooq via proxy
+   INT bonds → Stooq via proxy (TwelveData bond symbols N/A on free plan)
+   ════════════════════════════════════════════════════════ */
+const US_BONDS = [
+  { key:'us2y',  fred:'DGS2',  stooq:'us2yt.b',  label:'2Y'  },
+  { key:'us5y',  fred:'DGS5',  stooq:'us5yt.b',  label:'5Y'  },
+  { key:'us10y', fred:'DGS10', stooq:'us10yt.b', label:'10Y' },
+  { key:'us30y', fred:'DGS30', stooq:'us30yt.b', label:'30Y' },
+];
+const INT_BONDS = [
+  { key:'jp10y', stooq:'jp10yt.b', label:'JP 10Y', flag:'🇯🇵' },
+  { key:'de10y', stooq:'de10yt.b', label:'DE 10Y', flag:'🇩🇪' },
+  { key:'gb10y', stooq:'gb10yt.b', label:'GB 10Y', flag:'🇬🇧' },
+  { key:'au10y', stooq:'au10yt.b', label:'AU 10Y', flag:'🇦🇺' },
+];
+
+/* ════════════════════════════════════════════════════════
+   FX TICKER — TwelveData (FX pairs confirmed on free plan)
+   DXY added separately from Yahoo Finance data
+   Max 5 credits per load — safely under 8/min limit
+   ════════════════════════════════════════════════════════ */
+const FX_TICKERS = [
+  { sym:'EUR/USD', label:'EUR/USD', fmt: v => v.toFixed(4) },
+  { sym:'GBP/USD', label:'GBP/USD', fmt: v => v.toFixed(4) },
+  { sym:'USD/JPY', label:'USD/JPY', fmt: v => v.toFixed(2) },
+  { sym:'AUD/USD', label:'AUD/USD', fmt: v => v.toFixed(4) },
+  { sym:'USD/CNH', label:'USD/CNH', fmt: v => v.toFixed(4) },
+];
+
+/* ════════════════════════════════════════════════════════
+   FETCH HELPERS
+   ════════════════════════════════════════════════════════ */
+function abortIn(ms) {
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
+
+/* FRED — no CORS header, must go through proxy */
+async function fetchFRED(seriesId, limit = 5) {
+  const fredUrl = `https://api.stlouisfed.org/fred/series/observations?` +
+    new URLSearchParams({
+      series_id: seriesId, api_key: FRED_KEY,
+      file_type: 'json', sort_order: 'desc', limit,
+    }).toString();
+
+  const data = await fetchViaProxy(fredUrl);
+  const obs = (data.observations ?? []).find(o => o.value !== '.' && o.value !== '');
+  if (!obs) throw new Error('No observations');
+  return { val: parseFloat(obs.value), date: obs.date, src: 'fred' };
+}
+
+/* TwelveData — native CORS, no proxy needed */
+async function fetchTwelve(path, params = {}) {
+  const qs = new URLSearchParams({ ...params, apikey: TWELVE_KEY }).toString();
+  const res = await fetch(`https://api.twelvedata.com/${path}?${qs}`, { signal: abortIn(10000) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message ?? 'TwelveData error');
+  return data;
+}
+
+/* CORS proxy fallback (for Stooq & cbrates.com) */
+const PROXIES = [
+  url => `https://corsproxy.io/?${url}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+async function fetchViaProxy(url, asText) {
+  for (const mk of PROXIES) {
+    try {
+      const res = await fetch(mk(url), { signal: abortIn(8000) });
+      if (!res.ok) continue;
+      return asText ? res.text() : res.json();
+    } catch {}
+  }
+  throw new Error('All proxies failed');
+}
+
+/* ════════════════════════════════════════════════════════
+   CHART INSTANCES
+   ════════════════════════════════════════════════════════ */
+let chartDXY = null, chartYC = null, chartCPI = null;
+
+/* ════════════════════════════════════════════════════════
+   DXY — Yahoo Finance (^DXY via CORS proxy)
+   No TwelveData credits used
+   ════════════════════════════════════════════════════════ */
+let dxyPrice = null, dxyPrevClose = null; // shared with ticker
+
+async function loadDXY() {
+  try {
+    // 6M history for chart
+    const hist = await fetchViaProxy(
+      'https://query1.finance.yahoo.com/v8/finance/chart/%5EDXY?interval=1d&range=6mo');
+    const res = hist?.chart?.result?.[0];
+    if (!res) throw new Error('Empty response');
+
+    const meta   = res.meta;
+    const ts     = res.timestamp ?? [];
+    const closes = res.indicators?.quote?.[0]?.close ?? [];
+
+    dxyPrice     = meta.regularMarketPrice ?? closes.at(-1);
+    dxyPrevClose = meta.chartPreviousClose ?? meta.previousClose ?? closes.at(-2);
+    const chg    = dxyPrice - dxyPrevClose;
+    const chgPct = chg / dxyPrevClose * 100;
+
+    document.getElementById('dxy-price').textContent = dxyPrice.toFixed(2);
+    const el = document.getElementById('dxy-change');
+    el.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}  (${chg >= 0 ? '+' : ''}${chgPct.toFixed(2)}%)`;
+    el.className = 'dxy-change ' + (chg >= 0 ? 'up' : 'down');
+
+    const valid = closes.filter(Boolean);
+    const lo = Math.min(...valid).toFixed(2), hi = Math.max(...valid).toFixed(2);
+    document.getElementById('dxy-meta').innerHTML = `6M Low: <b>${lo}</b><br>6M High: <b>${hi}</b>`;
+
+    const labels = ts.map(t => {
+      const d = new Date(t * 1000);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const wrap = document.getElementById('dxy-chart-wrap');
+    wrap.innerHTML = '<canvas id="dxy-canvas"></canvas>';
+    const ctx = document.getElementById('dxy-canvas').getContext('2d');
+    if (chartDXY) chartDXY.destroy();
+    chartDXY = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: closes,
+          borderColor: '#388bfd',
+          backgroundColor: ctx2 => {
+            const g = ctx2.chart.ctx.createLinearGradient(0, 0, 0, 200);
+            g.addColorStop(0, 'rgba(56,139,253,.15)');
+            g.addColorStop(1, 'rgba(56,139,253,.01)');
+            return g;
+          },
+          borderWidth: 2, fill: true, pointRadius: 0, tension: 0.2,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode:'index', intersect:false,
+            callbacks: { label: c => '  DXY  ' + (c.parsed.y?.toFixed(2) ?? '—') } }
+        },
+        scales: {
+          x: { grid:{color:'rgba(48,54,61,.4)'}, ticks:{color:'#8b949e', maxTicksLimit:8, font:{size:10}} },
+          y: { grid:{color:'rgba(48,54,61,.4)'}, ticks:{color:'#8b949e', font:{size:10}} },
+        }
+      }
+    });
+    document.getElementById('dxy-src').innerHTML = '<span class="live">● Live</span> Yahoo Finance';
+  } catch (e) {
+    document.getElementById('dxy-chart-wrap').innerHTML =
+      `<div class="error-msg">⚠ DXY unavailable — ${e.message}</div>`;
+    document.getElementById('dxy-src').innerHTML = '<span class="fail">● Failed</span> ' + e.message;
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   BOND YIELDS
+   US bonds  → FRED primary (DGS2/5/10/30, no rate limit)
+               → Stooq proxy fallback
+   INT bonds → Stooq proxy (TwelveData bond symbols unavailable on free plan)
+   ════════════════════════════════════════════════════════ */
+async function loadBonds() {
+  const results = {};
+
+  /* US bonds: FRED parallel (4 independent calls, native CORS) */
+  await Promise.allSettled(US_BONDS.map(async b => {
+    try { results[b.key] = await fetchFRED(b.fred); }
+    catch {}
+  }));
+
+  /* US bonds: Stooq fallback for any FRED misses */
+  await Promise.allSettled(
+    US_BONDS.filter(b => !results[b.key]).map(async b => {
+      try {
+        const text = await fetchViaProxy(
+          `https://stooq.com/q/l/?s=${b.stooq}&f=sd2t2ohlcv&h&e=csv`, true);
+        const cols = text.trim().split('\n')[1]?.split(',') ?? [];
+        const val = parseFloat(cols[4]);
+        if (!isNaN(val)) results[b.key] = { val, date: cols[0], src: 'stooq' };
+      } catch {}
+    })
+  );
+
+  /* INT bonds: Stooq (all parallel) */
+  await Promise.allSettled(INT_BONDS.map(async b => {
+    try {
+      const text = await fetchViaProxy(
+        `https://stooq.com/q/l/?s=${b.stooq}&f=sd2t2ohlcv&h&e=csv`, true);
+      const cols = text.trim().split('\n')[1]?.split(',') ?? [];
+      const val = parseFloat(cols[4]);
+      if (!isNaN(val)) results[b.key] = { val, date: cols[0], src: 'stooq' };
+    } catch {}
+  }));
+
+  /* Render */
+  const ok = Object.values(results).some(Boolean);
+  if (!ok) {
+    document.getElementById('bond-content').innerHTML =
+      '<div class="error-msg">⚠ Bond data unavailable — proxy may be down, try refreshing</div>';
+    document.getElementById('bond-src').innerHTML = '<span class="fail">● Failed</span>';
+    drawYieldCurve([null, null, null, null]);
+    return;
+  }
+
+  const f = v => v != null ? v.toFixed(2) + '%' : '<span style="color:var(--muted)">—</span>';
+  let html = `<table class="bond-table">
+    <thead><tr>
+      <th>Tenor</th><th>Yield</th>
+      <th style="color:var(--muted)">Date</th>
+    </tr></thead><tbody>
+    <tr class="bond-group-header"><td colspan="3">🇺🇸 United States</td></tr>`;
+  US_BONDS.forEach(b => {
+    const r = results[b.key];
+    html += `<tr><td>${b.label}</td><td class="val">${f(r?.val ?? null)}</td>
+      <td style="font-size:10px;color:var(--muted)">${r?.date ?? ''}</td></tr>`;
+  });
+  html += `<tr class="bond-group-header"><td colspan="3">International 10Y</td></tr>`;
+  INT_BONDS.forEach(b => {
+    const r = results[b.key];
+    html += `<tr><td>${b.flag} ${b.label}</td><td class="val">${f(r?.val ?? null)}</td>
+      <td style="font-size:10px;color:var(--muted)">${r?.date ?? ''}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('bond-content').innerHTML = html;
+
+  const fredCnt  = Object.values(results).filter(r => r?.src === 'fred').length;
+  const stooqCnt = Object.values(results).filter(r => r?.src === 'stooq').length;
+  const parts = [];
+  if (fredCnt)  parts.push(`<span class="live">● FRED</span> (${fredCnt})`);
+  if (stooqCnt) parts.push(`<span class="live">● Stooq</span> (${stooqCnt})`);
+  document.getElementById('bond-src').innerHTML = parts.join(' · ') || '<span class="stale">● Partial</span>';
+
+  drawYieldCurve(US_BONDS.map(b => results[b.key]?.val ?? null));
+}
+
+function drawYieldCurve(vals) {
+  const ctx = document.getElementById('yield-curve-chart').getContext('2d');
+  if (chartYC) chartYC.destroy();
+  chartYC = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['2Y', '5Y', '10Y', '30Y'],
+      datasets: [{
+        label: 'US Yield Curve',
+        data: vals,
+        borderColor: '#ffa657',
+        backgroundColor: 'rgba(255,166,87,.08)',
+        borderWidth: 2.5, fill: true,
+        pointRadius: 5, pointBackgroundColor: '#ffa657',
+        tension: 0.2, spanGaps: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => '  ' + (c.parsed.y?.toFixed(2) ?? '—') + '%' } }
+      },
+      scales: {
+        x: { grid: { color:'rgba(48,54,61,.4)' }, ticks: { color:'#8b949e', font:{size:11} } },
+        y: {
+          grid: { color:'rgba(48,54,61,.4)' },
+          ticks: { color:'#8b949e', font:{size:10}, callback: v => v.toFixed(1) + '%' }
+        }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   TICKER
+   DXY  → reuse Yahoo Finance data from loadDXY() (0 TD credits)
+   FX   → TwelveData batch (5 credits, safely under 8/min)
+   ════════════════════════════════════════════════════════ */
+async function loadTicker() {
+  const items = [];
+
+  /* DXY from shared Yahoo data (populated by loadDXY) */
+  if (dxyPrice != null && dxyPrevClose != null) {
+    const chgPct = (dxyPrice - dxyPrevClose) / dxyPrevClose * 100;
+    items.push({ label:'DXY', priceStr: dxyPrice.toFixed(2), chgPct });
+  }
+
+  /* FX pairs from TwelveData (5 credits) */
+  try {
+    const syms = FX_TICKERS.map(t => t.sym).join(',');
+    const data = await fetchTwelve('quote', { symbol: syms });
+    const isMulti = !data.symbol;
+    FX_TICKERS.forEach(t => {
+      const q = isMulti ? data[t.sym] : (data.symbol === t.sym ? data : null);
+      if (!q || q.code === 400) return;
+      const price = parseFloat(q.close);
+      const prev  = parseFloat(q.previous_close);
+      if (isNaN(price) || isNaN(prev)) return;
+      items.push({ label: t.label, priceStr: t.fmt(price), chgPct: (price - prev) / prev * 100 });
+    });
+  } catch {}
+
+  const bar = document.getElementById('ticker-bar');
+  bar.innerHTML = items.length
+    ? items.map(i => {
+        const sign = i.chgPct >= 0 ? '+' : '';
+        return `<div class="ticker-item">
+          <span class="ticker-label">${i.label}</span>
+          <span class="ticker-price">${i.priceStr}</span>
+          <span class="${i.chgPct >= 0 ? 'up' : 'down'}">${sign}${i.chgPct.toFixed(2)}%</span>
+        </div>`;
+      }).join('')
+    : '<span style="color:var(--muted);font-size:12px">Quotes unavailable</span>';
+}
+
+/* ════════════════════════════════════════════════════════
+   CB RATES — cbrates.com via proxy (with static fallback)
+   ════════════════════════════════════════════════════════ */
+async function loadCBRates() {
+  renderCBRates(CB_FALLBACK, false);
+  try {
+    const html = await fetchViaProxy('https://www.cbrates.com/', true);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const keyMap = {
+      'federal reserve':'Fed', 'fed funds':'Fed',
+      'european central':'ECB',
+      'bank of england':'BOE',
+      'bank of japan':'BOJ',
+      'reserve bank of australia':'RBA',
+    };
+    const extracted = {};
+    const scanText = txt => {
+      const t = txt.toLowerCase();
+      for (const [kw, name] of Object.entries(keyMap)) {
+        if (t.includes(kw) && !extracted[name]) {
+          const m = t.match(/(\d+\.?\d*)\s*%/);
+          if (m) extracted[name] = m[1];
+        }
+      }
+    };
+    doc.querySelectorAll('table tr').forEach(r => scanText(r.textContent));
+    if (Object.keys(extracted).length < 3)
+      (doc.body?.textContent ?? '').split('\n').forEach(scanText);
+
+    const updated = CB_FALLBACK.map(r => ({ ...r, rate: extracted[r.name] ?? r.rate }));
+    renderCBRates(updated, Object.keys(extracted).length >= 3);
+  } catch {
+    document.getElementById('cb-src').innerHTML =
+      '<span class="stale">● Static</span> Fallback (cbrates.com unreachable)';
+  }
+}
+
+function renderCBRates(rates, isLive) {
+  document.getElementById('cb-content').innerHTML =
+    '<div class="cb-grid">' + rates.map(r => {
+      const cls = r.dir === '↑' ? 'up' : r.dir === '↓' ? 'down' : 'neutral';
+      return `<div class="cb-card">
+        <div class="cb-flag">${r.flag}</div>
+        <div class="cb-name">${r.name}</div>
+        <div class="cb-rate">${r.rate}<span class="cb-pct">%</span></div>
+        <div class="cb-dir ${cls}">${r.dir} ${r.cc}</div>
+        <div class="cb-updated">${r.updated}</div>
+      </div>`;
+    }).join('') + '</div>';
+  document.getElementById('cb-src').innerHTML = isLive
+    ? '<span class="live">● Live</span> cbrates.com'
+    : '<span class="stale">● Static</span> Fallback — Dec 2025–May 2026';
+}
+
+/* ════════════════════════════════════════════════════════
+   CPI — Static render + trend chart
+   ════════════════════════════════════════════════════════ */
+function renderCPI() {
+  const cards = CPI_META.map(m => {
+    const { val, period } = cpiLatest(m.key);
+    const cls = val === null ? 'neutral' : val > 3.5 ? 'cpi-hot' : val > 2.5 ? 'cpi-warm' : 'cpi-cool';
+    return `<div class="cpi-card">
+      <div class="cpi-flag">${m.flag}</div>
+      <div class="cpi-cc">${m.cc}</div>
+      <div class="cpi-val ${cls}">${val != null ? val.toFixed(1) : '—'}%</div>
+      <div class="cpi-period">${period}</div>
+    </div>`;
+  });
+  document.getElementById('cpi-cards').innerHTML =
+    '<div class="cpi-grid">' + cards.join('') + '</div>';
+
+  const COLORS = { US:'#388bfd', EU:'#3fb950', UK:'#ffa657', JP:'#bc8cff', AU:'#f85149' };
+  const ctx = document.getElementById('cpi-chart').getContext('2d');
+  if (chartCPI) chartCPI.destroy();
+  chartCPI = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: CPI.labels,
+      datasets: Object.keys(COLORS).map(k => ({
+        label: k, data: CPI[k],
+        borderColor: COLORS[k], backgroundColor: 'transparent',
+        borderWidth: 1.5, pointRadius: 0, tension: 0.3, spanGaps: true,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display:true, position:'top', labels:{ color:'#8b949e', font:{size:10}, boxWidth:10, padding:10 } },
+        tooltip: { mode:'index', intersect:false,
+          callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y?.toFixed(1) ?? '—'}%` }
+        }
+      },
+      scales: {
+        x: { grid:{color:'rgba(48,54,61,.4)'}, ticks:{color:'#8b949e', font:{size:9}, maxTicksLimit:8} },
+        y: { grid:{color:'rgba(48,54,61,.4)'}, ticks:{color:'#8b949e', font:{size:9}, callback: v => v + '%'} }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   BOOTSTRAP
+   TwelveData budget: 5 FX credits/load (under 8/min limit)
+   DXY: Yahoo Finance proxy (0 TD credits)
+   US bonds: FRED (0 TD credits), INT bonds: Stooq proxy (0 TD credits)
+   Auto-refresh: 30 min → ~240 TD credits/day (limit: 800)
+   ════════════════════════════════════════════════════════ */
+async function loadAll() {
+  document.getElementById('last-updated').textContent = 'Updating…';
+  renderCPI();
+  renderCBRates(CB_FALLBACK, false);
+
+  // DXY first → loadTicker() reuses dxyPrice/dxyPrevClose from Yahoo
+  await Promise.allSettled([
+    loadDXY().then(() => loadTicker()),
+    loadBonds(),
+    loadCBRates(),
+  ]);
+
+  const t = new Date();
+  document.getElementById('last-updated').textContent =
+    'Updated ' + t.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+}
+
+loadAll();
+setInterval(loadAll, 30 * 60 * 1000);
+</script>
+
+<!-- TradingView DXY widget -->
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+new TradingView.widget({
+  container_id: "tradingview_dxy",
+  width:        "100%",
+  height:       400,
+  symbol:       "CAPITALCOM:DXY",
+  interval:     "60",
+  timezone:     "Asia/Ho_Chi_Minh",
+  theme:        "dark",
+  style:        "1",
+  locale:       "en",
+  hide_side_toolbar: false,
+  allow_symbol_change: false,
+});
+</script>
+</body>
+</html>
