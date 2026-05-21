@@ -41,6 +41,7 @@
     .ticker-item { display: flex; align-items: center; gap: 6px; }
     .ticker-label { color: var(--muted); font-size: 11px; }
     .ticker-price { font-weight: 600; }
+    .ticker-sep { color: var(--border); padding: 0 2px; user-select: none; }
     .up { color: var(--green); }
     .down { color: var(--red); }
     .neutral { color: var(--muted); }
@@ -229,6 +230,12 @@ const FX_TICKERS = [
   { sym:'JPY=X',    label:'USD/JPY', fmt: v => v.toFixed(2) },
   { sym:'AUDUSD=X', label:'AUD/USD', fmt: v => v.toFixed(4) },
   { sym:'USDCNH=X', label:'USD/CNH', fmt: v => v.toFixed(4) },
+];
+/* Commodities — Yahoo Finance futures via CORS proxy */
+const COMMODITY_TICKERS = [
+  { sym:'GC=F',  label:'XAU/USD', fmt: v => v.toFixed(2) },
+  { sym:'CL=F',  label:'WTI',     fmt: v => v.toFixed(2) },
+  { sym:'BZ=F',  label:'XBR/USD', fmt: v => v.toFixed(2) },
 ];
 
 /* ════════════════════════════════════════════════════════
@@ -421,38 +428,55 @@ function drawYieldCurve(vals) {
    FX   → TwelveData batch (5 credits, safely under 8/min)
    ════════════════════════════════════════════════════════ */
 async function loadTicker() {
-  const items = [];
+  const fxItems = [];
+  const commItems = [];
 
   /* DXY from shared Yahoo data (populated by loadDXY) */
   if (dxyPrice != null && dxyPrevClose != null) {
     const chgPct = (dxyPrice - dxyPrevClose) / dxyPrevClose * 100;
-    items.push({ label:'DXY', priceStr: dxyPrice.toFixed(2), chgPct });
+    fxItems.push({ label:'DXY', priceStr: dxyPrice.toFixed(2), chgPct });
   }
 
-  /* FX pairs from Yahoo Finance via proxy (parallel, 0 API credits) */
-  await Promise.allSettled(FX_TICKERS.map(async t => {
-    try {
-      const data = await fetchViaProxy(
-        `https://query1.finance.yahoo.com/v8/finance/chart/${t.sym}?interval=1d&range=5d`);
-      const meta = data?.chart?.result?.[0]?.meta;
-      const price = meta?.regularMarketPrice;
-      const prev  = meta?.chartPreviousClose ?? meta?.previousClose;
-      if (price && prev && !isNaN(price) && !isNaN(prev))
-        items.push({ label: t.label, priceStr: t.fmt(price), chgPct: (price - prev) / prev * 100 });
-    } catch {}
-  }));
+  /* FX pairs + Commodities — Yahoo Finance via proxy (parallel) */
+  await Promise.allSettled([
+    ...FX_TICKERS.map(async t => {
+      try {
+        const data = await fetchViaProxy(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${t.sym}?interval=1d&range=5d`);
+        const meta = data?.chart?.result?.[0]?.meta;
+        const price = meta?.regularMarketPrice;
+        const prev  = meta?.chartPreviousClose ?? meta?.previousClose;
+        if (price && prev && !isNaN(price) && !isNaN(prev))
+          fxItems.push({ label: t.label, priceStr: t.fmt(price), chgPct: (price - prev) / prev * 100 });
+      } catch {}
+    }),
+    ...COMMODITY_TICKERS.map(async t => {
+      try {
+        const data = await fetchViaProxy(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${t.sym}?interval=1d&range=5d`);
+        const meta = data?.chart?.result?.[0]?.meta;
+        const price = meta?.regularMarketPrice;
+        const prev  = meta?.chartPreviousClose ?? meta?.previousClose;
+        if (price && prev && !isNaN(price) && !isNaN(prev))
+          commItems.push({ label: t.label, priceStr: t.fmt(price), chgPct: (price - prev) / prev * 100 });
+      } catch {}
+    }),
+  ]);
+
+  const renderItem = i => {
+    const sign = i.chgPct >= 0 ? '+' : '';
+    return `<div class="ticker-item">
+      <span class="ticker-label">${i.label}</span>
+      <span class="ticker-price">${i.priceStr}</span>
+      <span class="${i.chgPct >= 0 ? 'up' : 'down'}">${sign}${i.chgPct.toFixed(2)}%</span>
+    </div>`;
+  };
 
   const bar = document.getElementById('ticker-bar');
-  bar.innerHTML = items.length
-    ? items.map(i => {
-        const sign = i.chgPct >= 0 ? '+' : '';
-        return `<div class="ticker-item">
-          <span class="ticker-label">${i.label}</span>
-          <span class="ticker-price">${i.priceStr}</span>
-          <span class="${i.chgPct >= 0 ? 'up' : 'down'}">${sign}${i.chgPct.toFixed(2)}%</span>
-        </div>`;
-      }).join('')
-    : '<span style="color:var(--muted);font-size:12px">Quotes unavailable</span>';
+  const sep = (fxItems.length && commItems.length)
+    ? '<div class="ticker-sep">│</div>' : '';
+  const allHtml = [...fxItems.map(renderItem), sep, ...commItems.map(renderItem)].join('');
+  bar.innerHTML = allHtml || '<span style="color:var(--muted);font-size:12px">Quotes unavailable</span>';
 }
 
 /* ════════════════════════════════════════════════════════
