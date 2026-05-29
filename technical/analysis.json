@@ -1,14 +1,48 @@
 {
-  "generated_at": "2026-05-29T04:11:49.662915+00:00",
+  "generated_at": "2026-05-29T04:20:51.573112+00:00",
   "currency_bias": {
-    "USD": "neutral",
+    "USD": "bull",
     "EUR": "neutral",
     "GBP": "neutral",
     "AUD": "neutral",
-    "JPY": "neutral",
+    "JPY": "bear",
     "SGD": "neutral",
     "CAD": "neutral",
     "XAU": "neutral"
   },
-  "pairs": []
+  "pairs": [
+    {
+      "pair": "USDJPY",
+      "price": "159.36",
+      "change_pct": -0.0027,
+      "h4_signal": "bull",
+      "h1_signal": "neutral",
+      "m15_signal": "bull",
+      "priority": false,
+      "note": "H4 bull but lower TFs diverging",
+      "entry": "159.36",
+      "sl": "158.99",
+      "tp1": "159.65"
+    },
+    {
+      "pair": "EURUSD",
+      "price": "1.16362",
+      "change_pct": -0.0077,
+      "h4_signal": "neutral",
+      "h1_signal": "bull",
+      "m15_signal": "neutral",
+      "priority": false,
+      "note": "H4 inside cloud \u2014 wait for breakout"
+    },
+    {
+      "pair": "GBPUSD",
+      "price": "1.34341",
+      "change_pct": 0.0119,
+      "h4_signal": "neutral",
+      "h1_signal": "neutral",
+      "m15_signal": "neutral",
+      "priority": false,
+      "note": "H4 inside cloud \u2014 wait for breakout"
+    }
+  ]
 }
