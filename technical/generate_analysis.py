@@ -146,11 +146,11 @@ def main():
         print(f"  {sym}...", end=" ", flush=True)
 
         c_h4  = fetch_ohlc(sym, "4h",   80)
-        time.sleep(0.3)  # stay under rate limit
+        time.sleep(8)   # free tier = 8 req/min → ~7.5s between calls
         c_h1  = fetch_ohlc(sym, "1h",  100)
-        time.sleep(0.3)
+        time.sleep(8)
         c_m15 = fetch_ohlc(sym, "15min", 100)
-        time.sleep(0.3)
+        time.sleep(8)
 
         if not c_h4 or not c_h1:
             print("SKIP")
