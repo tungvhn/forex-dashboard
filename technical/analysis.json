@@ -1,79 +1,14 @@
 {
-  "generated_at": "2026-05-29T05:53:59.302152+00:00",
+  "generated_at": "2026-05-29T06:00:52.508484+00:00",
   "currency_bias": {
-    "USD": "bull",
-    "EUR": "bear",
-    "GBP": "bull",
-    "AUD": "bull",
+    "USD": "neutral",
+    "EUR": "neutral",
+    "GBP": "neutral",
+    "AUD": "neutral",
     "JPY": "neutral",
     "SGD": "neutral",
     "CAD": "neutral",
     "XAU": "neutral"
   },
-  "pairs": [
-    {
-      "pair": "USDJPY",
-      "price": "159.31",
-      "change_pct": 0.0353,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 52.0,
-      "ma_label": "Mixed",
-      "ma_bull": [
-        false,
-        true,
-        true
-      ],
-      "pivots": null,
-      "note": "2/3 MA hỗ trợ, → chờ tín hiệu"
-    },
-    {
-      "pair": "EURUSD",
-      "price": "1.16406",
-      "change_pct": -0.0841,
-      "bias": "bear",
-      "priority": true,
-      "rsi": null,
-      "ma_label": "Bearish",
-      "ma_bull": [
-        null,
-        null,
-        null
-      ],
-      "pivots": null,
-      "note": "dưới tất cả MA, → bias giảm"
-    },
-    {
-      "pair": "EURAUD",
-      "price": "1.62502",
-      "change_pct": -0.0879,
-      "bias": "bear",
-      "priority": true,
-      "rsi": 44.4,
-      "ma_label": "Bearish",
-      "ma_bull": [
-        false,
-        false,
-        false
-      ],
-      "pivots": null,
-      "note": "dưới tất cả MA, → bias giảm"
-    },
-    {
-      "pair": "EURGBP",
-      "price": "0.86630",
-      "change_pct": -0.0358,
-      "bias": "bear",
-      "priority": true,
-      "rsi": null,
-      "ma_label": "Bearish",
-      "ma_bull": [
-        null,
-        null,
-        null
-      ],
-      "pivots": null,
-      "note": "dưới tất cả MA, → bias giảm"
-    }
-  ]
+  "pairs": []
 }
