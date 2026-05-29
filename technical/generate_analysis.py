@@ -1,29 +1,24 @@
 """
 generate_analysis.py
-Fetches OHLC from TwelveData, computes Ichimoku H4/H1/M15,
-writes technical/analysis.json
+- Fetches price, pivot points, MA20/50/200, RSI from TwelveData
+- Generates Vietnamese notes from smart templates (no external AI needed)
+- Writes technical/analysis.json
 
 Env var required: TWELVE_API_KEY
 """
 
 import json, os, sys, time, urllib.request, urllib.parse
 from datetime import datetime, timezone
-from typing import Optional
 
-API_KEY = os.environ.get("TWELVE_API_KEY", "")
-if not API_KEY:
-    print("ERROR: TWELVE_API_KEY not set", file=sys.stderr)
-    sys.exit(1)
+TWELVE_KEY = os.environ.get("TWELVE_API_KEY", "")
+if not TWELVE_KEY:
+    print("ERROR: TWELVE_API_KEY not set", file=sys.stderr); sys.exit(1)
 
-# TwelveData uses slash format for forex pairs
 PAIRS = [
     "USD/JPY", "EUR/USD", "GBP/USD", "AUD/JPY", "USD/SGD",
     "AUD/USD", "AUD/SGD", "AUD/CAD", "EUR/AUD", "EUR/GBP",
     "EUR/SGD", "EUR/JPY", "GBP/JPY", "GBP/AUD", "XAG/USD", "XAU/USD",
 ]
-
-# Display names (no slash)
-def display(sym): return sym.replace("/", "")
 
 CURRENCY_SIDES = {
     "USD": [("USD/JPY","base"),("USD/SGD","base"),("EUR/USD","quote"),("GBP/USD","quote"),
@@ -38,96 +33,118 @@ CURRENCY_SIDES = {
     "XAU": [("XAU/USD","base")],
 }
 
-TENKAN, KIJUN, SENKOU = 9, 26, 52
+def display(sym): return sym.replace("/","")
 
-
-def fetch_ohlc(symbol: str, interval: str, outputsize: int = 100) -> Optional[list]:
-    params = urllib.parse.urlencode({
-        "symbol": symbol, "interval": interval,
-        "outputsize": outputsize, "apikey": API_KEY,
-    })
-    url = f"https://api.twelvedata.com/time_series?{params}"
+def td_get(path, params):
+    qs = urllib.parse.urlencode({**params, "apikey": TWELVE_KEY})
+    url = f"https://api.twelvedata.com/{path}?{qs}"
     try:
         with urllib.request.urlopen(url, timeout=20) as r:
             data = json.loads(r.read())
         if data.get("status") == "error":
-            print(f"    API error [{symbol}/{interval}]: {data.get('message','')}")
+            print(f"    TD error [{path}]: {data.get('message','')}")
             return None
-        values = data.get("values", [])
-        if not values:
-            print(f"    Empty values [{symbol}/{interval}]")
-            return None
-        return list(reversed(values))  # oldest first
+        return data
     except Exception as e:
-        print(f"    Fetch error [{symbol}/{interval}]: {e}")
+        print(f"    TD fetch error [{path}]: {e}")
         return None
 
+def fetch_price(sym):
+    d = td_get("price", {"symbol": sym})
+    return float(d["price"]) if d and "price" in d else None
 
-def midpoint(h_slice, l_slice):
-    return (max(h_slice) + min(l_slice)) / 2
+def fetch_change_pct(sym):
+    d = td_get("quote", {"symbol": sym})
+    if not d: return 0.0
+    try: return round(float(d.get("percent_change", 0)), 4)
+    except: return 0.0
 
+def fetch_pivots(sym):
+    d = td_get("pivot_points", {"symbol": sym, "interval": "1day", "outputsize": 1})
+    if not d or "values" not in d or not d["values"]: return None
+    v = d["values"][0]
+    try:
+        return {k: float(v[k]) for k in ["s2","s1","pp","r1","r2"]}
+    except: return None
 
-def ichimoku_signal(candles: list) -> str:
-    if len(candles) < SENKOU:
-        return "neutral"
-    highs  = [float(c["high"])  for c in candles]
-    lows   = [float(c["low"])   for c in candles]
-    closes = [float(c["close"]) for c in candles]
-    i = len(candles) - 1
+def fetch_ma(sym, period, interval="4h"):
+    d = td_get("ma", {"symbol": sym, "interval": interval, "time_period": period, "outputsize": 1})
+    if not d or "values" not in d or not d["values"]: return None
+    try: return float(d["values"][0]["ma"])
+    except: return None
 
-    tenkan = midpoint(highs[i-TENKAN+1:i+1], lows[i-TENKAN+1:i+1])
-    kijun  = midpoint(highs[i-KIJUN+1:i+1],  lows[i-KIJUN+1:i+1])
+def fetch_rsi(sym, interval="4h"):
+    d = td_get("rsi", {"symbol": sym, "interval": interval, "time_period": 14, "outputsize": 1})
+    if not d or "values" not in d or not d["values"]: return None
+    try: return round(float(d["values"][0]["rsi"]), 1)
+    except: return None
 
-    sa_idx = max(TENKAN-1, i - KIJUN)
-    sb_idx = max(SENKOU-1, i - KIJUN)
-    sa = midpoint(highs[sa_idx-TENKAN+1:sa_idx+1], lows[sa_idx-TENKAN+1:sa_idx+1])
-    sb = midpoint(highs[sb_idx-SENKOU+1:sb_idx+1], lows[sb_idx-SENKOU+1:sb_idx+1])
+def ma_bias(price, ma20, ma50, ma200):
+    above = [ma20 and price > ma20, ma50 and price > ma50, ma200 and price > ma200]
+    cnt = sum(1 for b in above if b)
+    if cnt == 3: return "bull", above
+    if cnt == 0: return "bear", above
+    if cnt == 2: return "partial", above
+    return "neutral", above
 
-    price     = closes[i]
-    cloud_top = max(sa, sb)
-    cloud_bot = min(sa, sb)
-
-    if price > cloud_top and tenkan >= kijun:
-        return "bull"
-    elif price < cloud_bot and tenkan <= kijun:
-        return "bear"
+def overall_bias(price, pivots, ma_sig, rsi):
+    score = 0
+    if pivots:
+        score += 1 if price > pivots["pp"] else -1
+    if ma_sig == "bull": score += 2
+    elif ma_sig == "bear": score -= 2
+    elif ma_sig == "partial": score += 1
+    if rsi:
+        if rsi > 55: score += 1
+        elif rsi < 45: score -= 1
+    if score >= 2: return "bull"
+    if score <= -2: return "bear"
     return "neutral"
 
+def generate_note(price_f, pivots, ma_bull, rsi, bias, chg):
+    parts = []
+    if pivots:
+        pp, r1, r2, s1, s2 = pivots["pp"], pivots["r1"], pivots["r2"], pivots["s1"], pivots["s2"]
+        if price_f >= r2:
+            parts.append("Vượt R2")
+        elif price_f >= r1:
+            parts.append("Giữa R1–R2")
+        elif price_f >= pp:
+            ratio = (price_f - pp) / (r1 - pp) if r1 != pp else 0
+            parts.append("Sát R1" if ratio > 0.75 else "Trên PP")
+        elif price_f >= s1:
+            ratio = (pp - price_f) / (pp - s1) if pp != s1 else 0
+            parts.append("Sát PP từ dưới" if ratio < 0.25 else "Dưới PP")
+        elif price_f >= s2:
+            parts.append("Giữa S1–S2")
+        else:
+            parts.append("Phá S2")
 
-def change_pct(candles: list) -> float:
-    if len(candles) < 2: return 0.0
-    prev = float(candles[-2]["close"])
-    curr = float(candles[-1]["close"])
-    return round((curr - prev) / prev * 100, 4) if prev else 0.0
+    above = sum(1 for b in ma_bull if b)
+    if above == 3: parts.append("tất cả MA hỗ trợ")
+    elif above == 2: parts.append("2/3 MA hỗ trợ")
+    elif above == 1: parts.append("1/3 MA hỗ trợ")
+    else: parts.append("dưới tất cả MA")
 
+    if rsi:
+        if rsi >= 70: parts.append("RSI overbought")
+        elif rsi <= 30: parts.append("RSI oversold")
+        elif rsi >= 60: parts.append("RSI tích cực")
+        elif rsi <= 40: parts.append("RSI yếu")
 
-def suggest_levels(candles_h1: list, signal: str) -> dict:
-    if len(candles_h1) < 20 or signal == "neutral": return {}
-    recent = candles_h1[-20:]
-    highs  = [float(c["high"]) for c in recent]
-    lows   = [float(c["low"])  for c in recent]
-    price  = float(candles_h1[-1]["close"])
-    dp     = 2 if price > 20 else 5
-    if signal == "bear":
-        return {"entry": f"{price:.{dp}f}", "sl": f"{max(highs)*1.001:.{dp}f}", "tp1": f"{min(lows)*0.999:.{dp}f}"}
-    else:
-        return {"entry": f"{price:.{dp}f}", "sl": f"{min(lows)*0.999:.{dp}f}", "tp1": f"{max(highs)*1.001:.{dp}f}"}
+    if abs(chg) >= 0.3:
+        parts.append("đang " + ("tăng mạnh" if chg > 0 else "giảm mạnh"))
 
+    if bias == "bull": parts.append("→ bias tăng")
+    elif bias == "bear": parts.append("→ bias giảm")
+    else: parts.append("→ chờ tín hiệu")
 
-def note_for(h4, h1, m15):
-    if h4 == h1 == m15 and h4 != "neutral":
-        return f"All TFs aligned {h4} — strong signal"
-    if h4 == h1 and h4 != "neutral":
-        return f"H4 + H1 aligned {h4}; M15 mixed"
-    if h4 == "neutral":
-        return "H4 inside cloud — wait for breakout"
-    return f"H4 {h4} but lower TFs diverging"
-
+    return ", ".join(parts)
 
 def currency_bias(pair_results):
     votes = {c: {"bull":0,"bear":0} for c in CURRENCY_SIDES}
     for p in pair_results:
-        sig = p.get("h4_signal","neutral")
+        sig = p.get("bias","neutral")
         if sig == "neutral": continue
         for ccy, pairs in CURRENCY_SIDES.items():
             for psym, side in pairs:
@@ -137,67 +154,79 @@ def currency_bias(pair_results):
     return {c: ("bull" if v["bull"]>v["bear"] else "bear" if v["bear"]>v["bull"] else "neutral")
             for c, v in votes.items()}
 
+def fmt(price):
+    return f"{price:.2f}" if price > 20 else f"{price:.5f}"
 
 def main():
-    print(f"Running analysis for {len(PAIRS)} pairs")
+    print(f"Fetching data for {len(PAIRS)} pairs...")
     results = []
 
     for sym in PAIRS:
-        print(f"  {sym}...", end=" ", flush=True)
+        dname = display(sym)
+        print(f"  {dname}...", end=" ", flush=True)
 
-        c_h4  = fetch_ohlc(sym, "4h",   80)
-        time.sleep(8)   # free tier = 8 req/min → ~7.5s between calls
-        c_h1  = fetch_ohlc(sym, "1h",  100)
-        time.sleep(8)
-        c_m15 = fetch_ohlc(sym, "15min", 100)
-        time.sleep(8)
+        price  = fetch_price(sym);       time.sleep(1)
+        chg    = fetch_change_pct(sym);  time.sleep(1)
+        pivots = fetch_pivots(sym);      time.sleep(1)
+        ma20   = fetch_ma(sym, 20);      time.sleep(1)
+        ma50   = fetch_ma(sym, 50);      time.sleep(1)
+        ma200  = fetch_ma(sym, 200);     time.sleep(1)
+        rsi    = fetch_rsi(sym);         time.sleep(1)
 
-        if not c_h4 or not c_h1:
-            print("SKIP")
-            continue
+        if price is None:
+            print("SKIP"); continue
 
-        h4  = ichimoku_signal(c_h4)
-        h1  = ichimoku_signal(c_h1)
-        m15 = ichimoku_signal(c_m15) if c_m15 else "neutral"
+        ma_sig, ma_bull = ma_bias(price, ma20, ma50, ma200)
+        bias     = overall_bias(price, pivots, ma_sig, rsi)
+        priority = bias != "neutral" and ma_sig in ("bull","bear") and bias == ma_sig
+        note     = generate_note(price, pivots, ma_bull, rsi, bias, chg)
 
-        price = float(c_h1[-1]["close"])
-        dp    = 2 if price > 20 else 5
-
-        result = {
+        r = {
             "_sym":       sym,
-            "pair":       display(sym),
-            "price":      f"{price:.{dp}f}",
-            "change_pct": change_pct(c_h1),
-            "h4_signal":  h4,
-            "h1_signal":  h1,
-            "m15_signal": m15,
-            "priority":   h4 != "neutral" and h4 == h1,
-            "note":       note_for(h4, h1, m15),
-            **suggest_levels(c_h1, h4),
+            "pair":       dname,
+            "price":      fmt(price),
+            "change_pct": chg,
+            "bias":       bias,
+            "priority":   priority,
+            "rsi":        rsi,
+            "ma_label":   "Bullish" if ma_sig=="bull" else "Bearish" if ma_sig=="bear" else "Mixed",
+            "ma_bull":    ma_bull,
+            "pivots":     {k: fmt(v) for k,v in pivots.items()} if pivots else None,
+            "note":       note,
         }
-        results.append(result)
-        print(f"H4={h4} H1={h1} M15={m15}")
 
-    bias = currency_bias(results)
+        if pivots:
+            if bias == "bear":
+                r["entry"] = fmt(price)
+                r["sl"]    = fmt(pivots["r1"])
+                r["tp1"]   = fmt(pivots["s1"])
+            elif bias == "bull":
+                r["entry"] = fmt(price)
+                r["sl"]    = fmt(pivots["s1"])
+                r["tp1"]   = fmt(pivots["r1"])
 
-    # Strip internal _sym key before saving
+        results.append(r)
+        print(f"bias={bias} RSI={rsi} MA={ma_sig}")
+
+    cbias = currency_bias([{**r, "_sym": next(
+        (s for s in PAIRS if display(s)==r["pair"]), "")} for r in results])
+
     for r in results:
         r.pop("_sym", None)
 
-    out = {
+    output = {
         "generated_at":  datetime.now(timezone.utc).isoformat(),
-        "currency_bias": bias,
+        "currency_bias": cbias,
         "pairs":         results,
     }
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis.json")
-    with open(path, "w") as f:
-        json.dump(out, f, indent=2)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
 
-    print(f"\nWrote {len(results)} pairs → {path}")
-    print(f"Priority setups: {sum(1 for r in results if r['priority'])}")
-    print(f"Currency bias: {bias}")
-
+    print(f"\nDone — {len(results)} pairs → {path}")
+    print(f"Priority setups: {sum(1 for r in results if r.get('priority'))}")
+    print(f"Currency bias: {cbias}")
 
 if __name__ == "__main__":
     main()
