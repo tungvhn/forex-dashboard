@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-05-29T04:37:27.228407+00:00",
+  "generated_at": "2026-05-29T05:53:59.302152+00:00",
   "currency_bias": {
-    "USD": "neutral",
-    "EUR": "bull",
-    "GBP": "neutral",
-    "AUD": "neutral",
-    "JPY": "bear",
+    "USD": "bull",
+    "EUR": "bear",
+    "GBP": "bull",
+    "AUD": "bull",
+    "JPY": "neutral",
     "SGD": "neutral",
     "CAD": "neutral",
     "XAU": "neutral"
@@ -13,165 +13,67 @@
   "pairs": [
     {
       "pair": "USDJPY",
-      "price": "159.34",
-      "change_pct": -0.0134,
-      "h4_signal": "bull",
-      "h1_signal": "neutral",
-      "m15_signal": "bull",
+      "price": "159.31",
+      "change_pct": 0.0353,
+      "bias": "neutral",
       "priority": false,
-      "note": "H4 bull but lower TFs diverging",
-      "entry": "159.34",
-      "sl": "158.99",
-      "tp1": "159.65"
+      "rsi": 52.0,
+      "ma_label": "Mixed",
+      "ma_bull": [
+        false,
+        true,
+        true
+      ],
+      "pivots": null,
+      "note": "2/3 MA hỗ trợ, → chờ tín hiệu"
     },
     {
       "pair": "EURUSD",
-      "price": "1.16363",
-      "change_pct": -0.0069,
-      "h4_signal": "neutral",
-      "h1_signal": "bull",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "GBPUSD",
-      "price": "1.34342",
-      "change_pct": 0.0127,
-      "h4_signal": "neutral",
-      "h1_signal": "neutral",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "AUDJPY",
-      "price": "114.06",
-      "change_pct": 0.0289,
-      "h4_signal": "neutral",
-      "h1_signal": "bull",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "USDSGD",
-      "price": "1.27738",
-      "change_pct": 0.0078,
-      "h4_signal": "bear",
-      "h1_signal": "bear",
-      "m15_signal": "neutral",
+      "price": "1.16406",
+      "change_pct": -0.0841,
+      "bias": "bear",
       "priority": true,
-      "note": "H4 + H1 aligned bear; M15 mixed",
-      "entry": "1.27738",
-      "sl": "1.28124",
-      "tp1": "1.27404"
-    },
-    {
-      "pair": "AUDUSD",
-      "price": "0.71580",
-      "change_pct": 0.0447,
-      "h4_signal": "neutral",
-      "h1_signal": "bull",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "AUDSGD",
-      "price": "0.91423",
-      "change_pct": 0.0383,
-      "h4_signal": "neutral",
-      "h1_signal": "bull",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "AUDCAD",
-      "price": "0.98704",
-      "change_pct": 0.0365,
-      "h4_signal": "neutral",
-      "h1_signal": "neutral",
-      "m15_signal": "bear",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
+      "rsi": null,
+      "ma_label": "Bearish",
+      "ma_bull": [
+        null,
+        null,
+        null
+      ],
+      "pivots": null,
+      "note": "dưới tất cả MA, → bias giảm"
     },
     {
       "pair": "EURAUD",
-      "price": "1.62551",
-      "change_pct": -0.0578,
-      "h4_signal": "neutral",
-      "h1_signal": "bear",
-      "m15_signal": "bear",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
+      "price": "1.62502",
+      "change_pct": -0.0879,
+      "bias": "bear",
+      "priority": true,
+      "rsi": 44.4,
+      "ma_label": "Bearish",
+      "ma_bull": [
+        false,
+        false,
+        false
+      ],
+      "pivots": null,
+      "note": "dưới tất cả MA, → bias giảm"
     },
     {
       "pair": "EURGBP",
-      "price": "0.86613",
-      "change_pct": -0.0277,
-      "h4_signal": "neutral",
-      "h1_signal": "neutral",
-      "m15_signal": "bear",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "EURSGD",
-      "price": "1.48627",
-      "change_pct": -0.0061,
-      "h4_signal": "bull",
-      "h1_signal": "neutral",
-      "m15_signal": "bear",
-      "priority": false,
-      "note": "H4 bull but lower TFs diverging",
-      "entry": "1.48627",
-      "sl": "1.48359",
-      "tp1": "1.49078"
-    },
-    {
-      "pair": "EURJPY",
-      "price": "185.40",
-      "change_pct": -0.024,
-      "h4_signal": "bull",
-      "h1_signal": "neutral",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 bull but lower TFs diverging",
-      "entry": "185.40",
-      "sl": "184.85",
-      "tp1": "185.88"
-    },
-    {
-      "pair": "GBPJPY",
-      "price": "214.07",
-      "change_pct": 0.0014,
-      "h4_signal": "neutral",
-      "h1_signal": "neutral",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "GBPAUD",
-      "price": "1.87671",
-      "change_pct": -0.0346,
-      "h4_signal": "neutral",
-      "h1_signal": "bear",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
-    },
-    {
-      "pair": "XAUUSD",
-      "price": "4508.91",
-      "change_pct": 0.1808,
-      "h4_signal": "neutral",
-      "h1_signal": "bull",
-      "m15_signal": "neutral",
-      "priority": false,
-      "note": "H4 inside cloud \u2014 wait for breakout"
+      "price": "0.86630",
+      "change_pct": -0.0358,
+      "bias": "bear",
+      "priority": true,
+      "rsi": null,
+      "ma_label": "Bearish",
+      "ma_bull": [
+        null,
+        null,
+        null
+      ],
+      "pivots": null,
+      "note": "dưới tất cả MA, → bias giảm"
     }
   ]
 }
