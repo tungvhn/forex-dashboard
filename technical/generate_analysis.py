@@ -1,10 +1,9 @@
 """
 generate_analysis.py
-Uses TwelveData batch endpoints (comma-separated symbols) to fetch
-price, pivot_points, MA20/50/200, RSI for all pairs in ~7 API calls total.
-Writes technical/analysis.json with Vietnamese notes.
-
-Env var required: TWELVE_API_KEY
+TwelveData Basic 8 plan: max 8 credits/min, 800 credits/day
+Strategy: split 16 pairs into 2 groups of 8, fetch each group separately
+with 65s sleep between groups → stays safely under 8/min limit
+Total credits per run: 7 indicators × 16 pairs = 112 credits (well under 800/day)
 """
 
 import json, os, sys, time, urllib.request, urllib.parse
@@ -19,6 +18,9 @@ PAIRS = [
     "AUD/USD","AUD/SGD","AUD/CAD","EUR/AUD","EUR/GBP",
     "EUR/SGD","EUR/JPY","GBP/JPY","GBP/AUD","XAG/USD","XAU/USD",
 ]
+
+GROUP_A = PAIRS[:8]   # first 8
+GROUP_B = PAIRS[8:]   # last 8
 
 CURRENCY_SIDES = {
     "USD":[("USD/JPY","base"),("USD/SGD","base"),("EUR/USD","quote"),("GBP/USD","quote"),
@@ -35,52 +37,86 @@ CURRENCY_SIDES = {
 
 def display(sym): return sym.replace("/","")
 
-def td_batch(path, extra_params, symbols):
-    """
-    Fetch a TwelveData indicator for multiple symbols in one call.
-    Returns dict keyed by symbol, or {} on error.
-    """
-    sym_str = ",".join(symbols)
-    qs = urllib.parse.urlencode({**extra_params, "symbol": sym_str, "apikey": TWELVE_KEY})
+def td_fetch(path, params, symbols):
+    """Fetch indicator for a group of symbols (max 8)."""
+    qs = urllib.parse.urlencode({
+        **params,
+        "symbol": ",".join(symbols),
+        "apikey": TWELVE_KEY,
+    })
     url = f"https://api.twelvedata.com/{path}?{qs}"
     try:
         with urllib.request.urlopen(url, timeout=30) as r:
             data = json.loads(r.read())
         if isinstance(data, dict) and data.get("status") == "error":
-            print(f"  TD error [{path}]: {data.get('message','')}")
+            print(f"    TD error [{path}]: {data.get('message','')}")
             return {}
-        # Single symbol returns data directly; multiple returns dict keyed by symbol
+        # single symbol → wrap in dict
         if len(symbols) == 1:
             return {symbols[0]: data}
-        return data
+        return data if isinstance(data, dict) else {}
     except Exception as e:
-        print(f"  TD fetch error [{path}]: {e}")
+        print(f"    fetch error [{path}]: {e}")
         return {}
 
-def parse_price(raw):
-    try: return float(raw.get("price", raw))
+def fetch_group(group, label):
+    """
+    Fetch all 7 indicators for a group of ≤8 symbols.
+    Uses 7 API calls = 7×8 = 56 credits max, spread over ~7 minutes.
+    """
+    print(f"\n  === Group {label}: {[display(s) for s in group]} ===")
+    results = {}
+
+    indicators = [
+        ("price",        {},                                          "price"),
+        ("quote",        {},                                          "quote"),
+        ("pivot_points", {"interval":"1day","outputsize":1},         "pivots"),
+        ("ma",           {"interval":"4h","time_period":20,"outputsize":1}, "ma20"),
+        ("ma",           {"interval":"4h","time_period":50,"outputsize":1}, "ma50"),
+        ("ma",           {"interval":"4h","time_period":200,"outputsize":1},"ma200"),
+        ("rsi",          {"interval":"4h","time_period":14,"outputsize":1}, "rsi"),
+    ]
+
+    for i, (path, params, key) in enumerate(indicators):
+        print(f"    [{i+1}/7] {key}...", end=" ", flush=True)
+        raw = td_fetch(path, params, group)
+        for sym in group:
+            if sym not in results:
+                results[sym] = {}
+            results[sym][key] = raw.get(sym, {})
+        ok = sum(1 for sym in group if raw.get(sym))
+        print(f"{ok}/{len(group)} ok")
+        if i < len(indicators) - 1:
+            time.sleep(65)  # wait 65s → next call is safely in a new minute
+
+    return results
+
+def parse_price(d):
+    try: return float(d.get("price", 0) or 0) or None
     except: return None
 
-def parse_change(raw):
-    try: return round(float(raw.get("percent_change", 0)), 4)
+def parse_change(d):
+    try: return round(float(d.get("percent_change", 0) or 0), 4)
     except: return 0.0
 
-def parse_pivots(raw):
+def parse_pivots(d):
     try:
-        v = raw["values"][0] if "values" in raw else raw
+        v = d.get("values", [d])[0] if "values" in d else d
         return {k: float(v[k]) for k in ["s2","s1","pp","r1","r2"]}
     except: return None
 
-def parse_ma(raw):
+def parse_ma(d):
     try:
-        v = raw["values"][0] if "values" in raw else raw
-        return float(v.get("ma", v))
+        v = d.get("values", [d])[0] if "values" in d else d
+        val = v.get("ma") or v.get("value")
+        return float(val) if val else None
     except: return None
 
-def parse_rsi(raw):
+def parse_rsi(d):
     try:
-        v = raw["values"][0] if "values" in raw else raw
-        return round(float(v.get("rsi", v)), 1)
+        v = d.get("values", [d])[0] if "values" in d else d
+        val = v.get("rsi") or v.get("value")
+        return round(float(val), 1) if val else None
     except: return None
 
 def ma_bias(price, ma20, ma50, ma200):
@@ -132,7 +168,8 @@ def generate_note(price_f, pivots, ma_bull, rsi, bias, chg):
     if abs(chg)>=0.3:
         parts.append("đang " + ("tăng mạnh" if chg>0 else "giảm mạnh"))
 
-    parts.append("→ bias tăng" if bias=="bull" else "→ bias giảm" if bias=="bear" else "→ chờ tín hiệu")
+    parts.append("→ bias tăng" if bias=="bull" else
+                 "→ bias giảm" if bias=="bear" else "→ chờ tín hiệu")
     return ", ".join(parts)
 
 def currency_bias(pair_results):
@@ -142,7 +179,7 @@ def currency_bias(pair_results):
         if sig=="neutral": continue
         for ccy, pairs in CURRENCY_SIDES.items():
             for psym, side in pairs:
-                if psym==p["_sym"]:
+                if psym==p.get("_sym",""):
                     vote = sig if side=="base" else ("bear" if sig=="bull" else "bull")
                     votes[ccy][vote] += 1
     return {c:("bull" if v["bull"]>v["bear"] else "bear" if v["bear"]>v["bull"] else "neutral")
@@ -151,55 +188,20 @@ def currency_bias(pair_results):
 def fmt(price):
     return f"{price:.2f}" if price>20 else f"{price:.5f}"
 
-def main():
-    syms = PAIRS
-    print(f"Fetching batch data for {len(syms)} pairs...")
-
-    # --- Batch fetch (each call = 1 API request regardless of symbol count) ---
-    print("  [1/7] prices"); time.sleep(1)
-    prices_raw  = td_batch("price",  {}, syms)
-    time.sleep(8)
-
-    print("  [2/7] quotes (% change)"); 
-    quotes_raw  = td_batch("quote",  {}, syms)
-    time.sleep(8)
-
-    print("  [3/7] pivot points")
-    pivots_raw  = td_batch("pivot_points", {"interval":"1day","outputsize":1}, syms)
-    time.sleep(8)
-
-    print("  [4/7] MA20")
-    ma20_raw    = td_batch("ma", {"interval":"4h","time_period":20,"outputsize":1}, syms)
-    time.sleep(8)
-
-    print("  [5/7] MA50")
-    ma50_raw    = td_batch("ma", {"interval":"4h","time_period":50,"outputsize":1}, syms)
-    time.sleep(8)
-
-    print("  [6/7] MA200")
-    ma200_raw   = td_batch("ma", {"interval":"4h","time_period":200,"outputsize":1}, syms)
-    time.sleep(8)
-
-    print("  [7/7] RSI")
-    rsi_raw     = td_batch("rsi", {"interval":"4h","time_period":14,"outputsize":1}, syms)
-
-    print("\nComputing signals...")
+def process_group_data(group, raw_data):
     results = []
-
-    for sym in syms:
-        dname = display(sym)
-
-        price   = parse_price(prices_raw.get(sym, {}))
-        chg     = parse_change(quotes_raw.get(sym, {}))
-        pivots  = parse_pivots(pivots_raw.get(sym, {}))
-        ma20    = parse_ma(ma20_raw.get(sym, {}))
-        ma50    = parse_ma(ma50_raw.get(sym, {}))
-        ma200   = parse_ma(ma200_raw.get(sym, {}))
-        rsi     = parse_rsi(rsi_raw.get(sym, {}))
-
+    for sym in group:
+        d = raw_data.get(sym, {})
+        price  = parse_price(d.get("price", {}))
         if price is None:
-            print(f"  {dname}: SKIP (no price)")
-            continue
+            print(f"  {display(sym)}: SKIP (no price)"); continue
+
+        chg    = parse_change(d.get("quote", {}))
+        pivots = parse_pivots(d.get("pivots", {}))
+        ma20   = parse_ma(d.get("ma20", {}))
+        ma50   = parse_ma(d.get("ma50", {}))
+        ma200  = parse_ma(d.get("ma200", {}))
+        rsi    = parse_rsi(d.get("rsi", {}))
 
         ma_sig, ma_bull = ma_bias(price, ma20, ma50, ma200)
         bias     = overall_bias(price, pivots, ma_sig, rsi)
@@ -208,7 +210,7 @@ def main():
 
         r = {
             "_sym":       sym,
-            "pair":       dname,
+            "pair":       display(sym),
             "price":      fmt(price),
             "change_pct": chg,
             "bias":       bias,
@@ -226,10 +228,27 @@ def main():
                 r["entry"]=fmt(price); r["sl"]=fmt(pivots["s1"]); r["tp1"]=fmt(pivots["r1"])
 
         results.append(r)
-        print(f"  {dname}: bias={bias} RSI={rsi} MA={ma_sig} pivot={'ok' if pivots else 'none'}")
+        print(f"  {display(sym)}: bias={bias} RSI={rsi} MA={ma_sig}")
+    return results
 
-    cbias = currency_bias([{**r,"_sym":next((s for s in PAIRS if display(s)==r["pair"]),"")} for r in results])
-    for r in results: r.pop("_sym",None)
+def main():
+    print("=== Technical Analysis Generator ===")
+    print(f"Plan: Basic 8 (8 credits/min) | Pairs: {len(PAIRS)} | Groups: 2×8")
+    print(f"Estimated time: ~9 minutes\n")
+
+    raw_a = fetch_group(GROUP_A, "A (pairs 1-8)")
+    print("\n  Waiting 65s before Group B...")
+    time.sleep(65)
+    raw_b = fetch_group(GROUP_B, "B (pairs 9-16)")
+
+    print("\nProcessing results...")
+    results_a = process_group_data(GROUP_A, raw_a)
+    results_b = process_group_data(GROUP_B, raw_b)
+    results = results_a + results_b
+
+    cbias = currency_bias([{**r, "_sym": next(
+        (s for s in PAIRS if display(s)==r["pair"]), "")} for r in results])
+    for r in results: r.pop("_sym", None)
 
     output = {
         "generated_at":  datetime.now(timezone.utc).isoformat(),
@@ -238,12 +257,13 @@ def main():
     }
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis.json")
-    with open(path,"w",encoding="utf-8") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 
-    print(f"\nDone — {len(results)}/{len(PAIRS)} pairs written")
+    print(f"\n=== Done ===")
+    print(f"Pairs written: {len(results)}/{len(PAIRS)}")
     print(f"Priority setups: {sum(1 for r in results if r.get('priority'))}")
     print(f"Currency bias: {cbias}")
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
