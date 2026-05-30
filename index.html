@@ -163,19 +163,19 @@
   <!-- ④ Currency Heatmap -->
   <div class="card mb" style="overflow:hidden">
     <div class="section-title" style="padding:12px 16px 8px;margin-bottom:0">Currency Strength — Heatmap</div>
-    <div class="tradingview-widget-container" style="height:500px">
-      <div class="tradingview-widget-container__widget" style="height:100%"></div>
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>
+      {
+        "width": "100%",
+        "height": 450,
+        "currencies": ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","SGD"],
+        "isTransparent": true,
+        "colorTheme": "dark",
+        "locale": "en"
+      }
+      </script>
     </div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>
-    {
-      "width": "100%",
-      "height": 500,
-      "currencies": ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","SGD"],
-      "isTransparent": true,
-      "colorTheme": "dark",
-      "locale": "en"
-    }
-    </script>
     <div class="data-src"><span class="live">● Live</span> TradingView · % change · 1D/1W/1M</div>
   </div>
 
