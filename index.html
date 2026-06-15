@@ -277,12 +277,12 @@ const US_BONDS = [
   { key:'us10y', fred:'DGS10', stooq:'us10yt.b', label:'10Y' },
   { key:'us30y', fred:'DGS30', stooq:'us30yt.b', label:'30Y' },
 ];
-// INT bonds: FRED via proxy (OECD monthly series — confirmed working from GitHub Pages)
+// INT bonds: Stooq primary (daily), FRED fallback (OECD monthly ~6wk lag)
 const INT_BONDS = [
-  { key:'jp10y', fred:'IRLTLT01JPM156N', label:'JP 10Y', flag:'🇯🇵' },
-  { key:'de10y', fred:'IRLTLT01DEM156N', label:'DE 10Y', flag:'🇩🇪' },
-  { key:'gb10y', fred:'IRLTLT01GBM156N', label:'GB 10Y', flag:'🇬🇧' },
-  { key:'au10y', fred:'IRLTLT01AUM156N', label:'AU 10Y', flag:'🇦🇺' },
+  { key:'jp10y', stooq:'10ljpy.b', fred:'IRLTLT01JPM156N', label:'JP 10Y', flag:'🇯🇵' },
+  { key:'de10y', stooq:'10ldeuy.b', fred:'IRLTLT01DEM156N', label:'DE 10Y', flag:'🇩🇪' },
+  { key:'gb10y', stooq:'10lgbpy.b', fred:'IRLTLT01GBM156N', label:'GB 10Y', flag:'🇬🇧' },
+  { key:'au10y', stooq:'10laudy.b', fred:'IRLTLT01AUM156N', label:'AU 10Y', flag:'🇦🇺' },
 ];
 
 /* ════════════════════════════════════════════════════════
@@ -405,8 +405,19 @@ async function loadBonds() {
     })
   );
 
-  /* INT bonds: FRED via proxy (same as US bonds — confirmed working) */
+  /* INT bonds: Stooq primary (daily data) */
   await Promise.allSettled(INT_BONDS.map(async b => {
+    try {
+      const text = await fetchViaProxy(
+        `https://stooq.com/q/l/?s=${b.stooq}&f=sd2t2ohlcv&h&e=csv`, true);
+      const cols = text.trim().split('\n')[1]?.split(',') ?? [];
+      const val = parseFloat(cols[4]);
+      if (!isNaN(val)) results[b.key] = { val, date: cols[0], src: 'stooq' };
+    } catch {}
+  }));
+
+  /* INT bonds: FRED fallback for any Stooq misses */
+  await Promise.allSettled(INT_BONDS.filter(b => !results[b.key]).map(async b => {
     try { results[b.key] = await fetchFRED(b.fred, 3); } catch {}
   }));
 
