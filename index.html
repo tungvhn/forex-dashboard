@@ -134,7 +134,7 @@
       <div class="section-title">CPI Inflation — YoY % (IMF Data)</div>
       <div id="cpi-cards"></div>
       <div class="chart-wrap" style="height:170px"><canvas id="cpi-chart"></canvas></div>
-      <div class="data-src"><span class="stale">● Static</span> IMF CPI Dataset — downloaded May 2026</div>
+      <div class="data-src"><span class="stale">● Static</span> IMF CPI Dataset — downloaded Jun 2026</div>
     </div>
   </div>
 
@@ -209,18 +209,15 @@
 
   <!-- ④ Economic Calendar -->
   <div class="card mb" style="overflow:hidden">
-    <div class="section-title" style="padding:12px 16px 0;margin-bottom:0">Economic Calendar — Giờ Việt Nam (ICT +7)</div>
-    <iframe
-      src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&importance=1,2,3&features=datepicker,timezone&countries=5,22,17,25,34,35,7,43&calType=week&timeZone=23&lang=56"
-      width="100%"
-      height="467"
-      frameborder="0"
-      allowtransparency="true"
-      marginwidth="0"
-      marginheight="0"
-      style="display:block;margin-top:8px"
-    ></iframe>
-    <div class="data-src"><span class="live">● Live</span> Investing.com · Timezone Asia/Ho_Chi_Minh · Actual / Forecast / Previous</div>
+    <div class="section-title" style="padding:12px 16px 0;margin-bottom:8px">Economic Calendar</div>
+    <div id="economicCalendarWidget" style="min-height:500px;width:100%"></div>
+    <div class="ecw-copyright" style="padding:6px 16px;font-size:10px">
+      <a href="https://www.metatrader.com/?utm_source=calendar.widget&utm_medium=link&utm_term=economic.calendar&utm_content=visit.mql5.calendar&utm_campaign=202.calendar.widget" rel="noopener nofollow" target="_blank" style="color:var(--muted);text-decoration:none">MetaTrader World Markets</a>
+    </div>
+    <script async type="text/javascript" data-type="calendar-widget" src="https://www.tradays.com/c/js/widgets/calendar/widget.js?v=15">
+      {"width":"100%","height":"100%","mode":"2","fw":"html","lang":"en"}
+    </script>
+    <div class="data-src"><span class="live">● Live</span> MQL5 / Tradays · Economic Calendar</div>
   </div>
 
 </div>
@@ -237,13 +234,13 @@ const FRED_KEY   = '20952631f1f11f78a2adf090f82f82a4';
    Series: *._T.YOY_PCH_PA_PT.M
    ════════════════════════════════════════════════════════ */
 const CPI = {
-  labels: ['Feb 25','Mar 25','Apr 25','May 25','Jun 25','Jul 25','Aug 25',
-           'Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26'],
-  US: [2.82, 2.39, 2.31, 2.35, 2.67, 2.70, 2.92, 3.01, null, 2.74, 2.68, 2.39, 2.41, 3.26, 3.81],
-  EU: [2.29, 2.19, 2.10, 2.10, 2.01, 2.00, 2.17, 2.42, 2.33, 2.34, 1.83, 2.08, 1.90, 2.72, 2.88],
-  UK: [3.67, 3.42, 4.16, 3.99, 4.06, 4.21, 4.12, 4.04, 3.87, 3.57, 3.55, 3.18, 3.24, 3.45, null],
-  JP: [3.65, 3.64, 3.53, 3.42, 3.23, 3.04, 2.75, 2.85, 3.01, 2.91, 2.08, 1.53, 1.26, 1.44, null],
-  AU: [null, null, 2.37, 2.11, 1.89, 2.96, 3.17, 3.58, 3.81, 3.44, 3.76, 3.84, 3.73, 4.57, null],
+  labels: ['Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25','Jul 25','Aug 25',
+           'Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26'],
+  US: [3.0, 2.82, 2.39, 2.31, 2.35, 2.67, 2.7, 2.92, 3.01, null, 2.74, 2.68, 2.39, 2.41, 3.26, 3.81, 4.25],
+  EU: [2.53, 2.34, 2.19, 2.17, 1.9, 1.99, 2.05, 2.06, 2.25, 2.12, 2.15, 1.97, 1.66, 1.88, 2.56, 3.04, null],
+  UK: [3.92, 3.67, 3.42, 4.16, 3.99, 4.06, 4.21, 4.12, 4.04, 3.87, 3.57, 3.55, 3.18, 3.24, 3.45, 2.98, null],
+  JP: [4.02, 3.65, 3.64, 3.53, 3.42, 3.23, 3.04, 2.75, 2.85, 3.01, 2.91, 2.08, 1.53, 1.26, 1.44, null, null],
+  AU: [null, null, null, 2.37, 2.11, 1.89, 2.96, 3.17, 3.58, 3.81, 3.44, 3.76, 3.84, 3.73, 4.57, 4.18, null],
 };
 const CPI_META = [
   { key:'US', flag:'🇺🇸', cc:'US' }, { key:'EU', flag:'🇪🇺', cc:'EU' },
