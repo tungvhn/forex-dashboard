@@ -1,45 +1,95 @@
 {
-  "generated_at": "2026-09-28T03:58:05.365861+00:00",
+  "generated_at": "2026-09-29T04:33:03.616835+00:00",
   "currency_bias": {
     "USD": "bull",
     "EUR": "bear",
-    "GBP": "neutral",
-    "AUD": "neutral",
-    "JPY": "bear",
-    "SGD": "neutral",
+    "GBP": "bull",
+    "AUD": "bear",
+    "JPY": "bull",
+    "SGD": "bull",
     "CAD": "neutral",
     "XAU": "bear"
   },
   "pairs": [
     {
       "pair": "USDJPY",
-      "price": "157.78",
-      "change_pct": 0.3417,
+      "price": "157.44",
+      "change_pct": 0.0412,
       "bias": "bull",
-      "priority": true,
-      "rsi": 58.5,
-      "ma_label": "Bullish",
+      "priority": false,
+      "rsi": 49.8,
+      "ma_label": "Mixed",
       "ma_bull": [
         true,
-        true,
+        false,
         true
       ],
       "pivots": {
         "pp": "157.24",
-        "r1": "157.34",
-        "r2": "157.45",
-        "s1": "157.14",
-        "s2": "157.03"
+        "r1": "158.00",
+        "r2": "158.61",
+        "s1": "156.62",
+        "s2": "155.86"
       },
-      "note": "Vượt R2, tất cả MA hỗ trợ, đang tăng mạnh, → bias tăng",
-      "entry": "157.78",
-      "sl": "157.14",
-      "tp1": "157.34"
+      "note": "Trên PP, 2/3 MA hỗ trợ, → bias tăng",
+      "entry": "157.44",
+      "sl": "156.62",
+      "tp1": "158.00"
     },
     {
       "pair": "EURUSD",
-      "price": "1.13872",
-      "change_pct": 0.0369,
+      "price": "1.13620",
+      "change_pct": -0.0809,
+      "bias": "bear",
+      "priority": true,
+      "rsi": 31.2,
+      "ma_label": "Bearish",
+      "ma_bull": [
+        false,
+        false,
+        false
+      ],
+      "pivots": {
+        "pp": "1.13730",
+        "r1": "1.13933",
+        "r2": "1.14150",
+        "s1": "1.13513",
+        "s2": "1.13310"
+      },
+      "note": "Dưới PP, dưới tất cả MA, RSI yếu, → bias giảm",
+      "entry": "1.13620",
+      "sl": "1.13933",
+      "tp1": "1.13513"
+    },
+    {
+      "pair": "GBPUSD",
+      "price": "1.32412",
+      "change_pct": -0.0981,
+      "bias": "bear",
+      "priority": true,
+      "rsi": 41.7,
+      "ma_label": "Bearish",
+      "ma_bull": [
+        false,
+        false,
+        false
+      ],
+      "pivots": {
+        "pp": "1.32530",
+        "r1": "1.32821",
+        "r2": "1.33094",
+        "s1": "1.32257",
+        "s2": "1.31966"
+      },
+      "note": "Dưới PP, dưới tất cả MA, → bias giảm",
+      "entry": "1.32412",
+      "sl": "1.32821",
+      "tp1": "1.32257"
+    },
+    {
+      "pair": "AUDJPY",
+      "price": "110.36",
+      "change_pct": -0.0833,
       "bias": "bear",
       "priority": true,
       "rsi": 41.6,
@@ -50,68 +100,24 @@
         false
       ],
       "pivots": {
-        "pp": "1.13920",
-        "r1": "1.14075",
-        "r2": "1.14319",
-        "s1": "1.13676",
-        "s2": "1.13521"
+        "pp": "110.40",
+        "r1": "110.93",
+        "r2": "111.41",
+        "s1": "109.92",
+        "s2": "109.39"
       },
       "note": "Sát PP từ dưới, dưới tất cả MA, → bias giảm",
-      "entry": "1.13872",
-      "sl": "1.14075",
-      "tp1": "1.13676"
-    },
-    {
-      "pair": "GBPUSD",
-      "price": "1.32426",
-      "change_pct": 0.0506,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 39.5,
-      "ma_label": "Mixed",
-      "ma_bull": [
-        true,
-        false,
-        false
-      ],
-      "pivots": {
-        "pp": "1.32408",
-        "r1": "1.32507",
-        "r2": "1.32657",
-        "s1": "1.32258",
-        "s2": "1.32159"
-      },
-      "note": "Trên PP, 1/3 MA hỗ trợ, RSI yếu, → chờ tín hiệu"
-    },
-    {
-      "pair": "AUDJPY",
-      "price": "110.84",
-      "change_pct": 0.4646,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 50.3,
-      "ma_label": "Mixed",
-      "ma_bull": [
-        true,
-        false,
-        false
-      ],
-      "pivots": {
-        "pp": "110.40",
-        "r1": "110.66",
-        "r2": "110.98",
-        "s1": "110.08",
-        "s2": "109.82"
-      },
-      "note": "Giữa R1–R2, 1/3 MA hỗ trợ, đang tăng mạnh, → chờ tín hiệu"
+      "entry": "110.36",
+      "sl": "110.93",
+      "tp1": "109.92"
     },
     {
       "pair": "USDSGD",
-      "price": "1.27827",
-      "change_pct": 0.0524,
+      "price": "1.27857",
+      "change_pct": 0.09,
       "bias": "bull",
       "priority": true,
-      "rsi": 54.5,
+      "rsi": 56.2,
       "ma_label": "Bullish",
       "ma_bull": [
         true,
@@ -119,68 +125,74 @@
         true
       ],
       "pivots": {
-        "pp": "1.27748",
-        "r1": "1.27861",
-        "r2": "1.27960",
-        "s1": "1.27649",
-        "s2": "1.27536"
+        "pp": "1.27769",
+        "r1": "1.27909",
+        "r2": "1.28073",
+        "s1": "1.27605",
+        "s2": "1.27465"
       },
       "note": "Trên PP, tất cả MA hỗ trợ, → bias tăng",
-      "entry": "1.27827",
-      "sl": "1.27649",
-      "tp1": "1.27861"
+      "entry": "1.27857",
+      "sl": "1.27605",
+      "tp1": "1.27909"
     },
     {
       "pair": "AUDUSD",
-      "price": "0.70248",
-      "change_pct": 0.1326,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 40.6,
-      "ma_label": "Mixed",
+      "price": "0.70093",
+      "change_pct": -0.1183,
+      "bias": "bear",
+      "priority": true,
+      "rsi": 34.9,
+      "ma_label": "Bearish",
       "ma_bull": [
-        true,
+        false,
         false,
         false
       ],
       "pivots": {
         "pp": "0.70211",
-        "r1": "0.70348",
-        "r2": "0.70538",
-        "s1": "0.70021",
-        "s2": "0.69884"
+        "r1": "0.70360",
+        "r2": "0.70545",
+        "s1": "0.70026",
+        "s2": "0.69877"
       },
-      "note": "Trên PP, 1/3 MA hỗ trợ, → chờ tín hiệu"
+      "note": "Dưới PP, dưới tất cả MA, RSI yếu, → bias giảm",
+      "entry": "0.70093",
+      "sl": "0.70360",
+      "tp1": "0.70026"
     },
     {
       "pair": "AUDSGD",
-      "price": "0.89796",
-      "change_pct": 0.1841,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 42.1,
-      "ma_label": "Mixed",
+      "price": "0.89619",
+      "change_pct": -0.0335,
+      "bias": "bear",
+      "priority": true,
+      "rsi": 36.3,
+      "ma_label": "Bearish",
       "ma_bull": [
-        true,
+        false,
         false,
         false
       ],
       "pivots": {
-        "pp": "0.89709",
-        "r1": "0.89890",
-        "r2": "0.90144",
-        "s1": "0.89455",
-        "s2": "0.89274"
+        "pp": "0.89692",
+        "r1": "0.89818",
+        "r2": "0.89989",
+        "s1": "0.89521",
+        "s2": "0.89395"
       },
-      "note": "Trên PP, 1/3 MA hỗ trợ, → chờ tín hiệu"
+      "note": "Dưới PP, dưới tất cả MA, RSI yếu, → bias giảm",
+      "entry": "0.89619",
+      "sl": "0.89818",
+      "tp1": "0.89521"
     },
     {
       "pair": "AUDCAD",
-      "price": "0.99415",
-      "change_pct": 0.2096,
+      "price": "0.99422",
+      "change_pct": -0.0452,
       "bias": "neutral",
       "priority": false,
-      "rsi": 50.5,
+      "rsi": 50.1,
       "ma_label": "Mixed",
       "ma_bull": [
         true,
@@ -188,156 +200,168 @@
         false
       ],
       "pivots": {
-        "pp": "0.99282",
-        "r1": "0.99480",
-        "r2": "0.99747",
-        "s1": "0.99015",
-        "s2": "0.98817"
+        "pp": "0.99435",
+        "r1": "0.99724",
+        "r2": "0.99983",
+        "s1": "0.99176",
+        "s2": "0.98887"
+      },
+      "note": "Sát PP từ dưới, 1/3 MA hỗ trợ, → chờ tín hiệu"
+    },
+    {
+      "pair": "EURAUD",
+      "price": "1.62099",
+      "change_pct": 0.0265,
+      "bias": "bull",
+      "priority": false,
+      "rsi": 45.6,
+      "ma_label": "Mixed",
+      "ma_bull": [
+        false,
+        true,
+        true
+      ],
+      "pivots": {
+        "pp": "1.62082",
+        "r1": "1.62453",
+        "r2": "1.62851",
+        "s1": "1.61684",
+        "s2": "1.61313"
+      },
+      "note": "Trên PP, 2/3 MA hỗ trợ, → bias tăng",
+      "entry": "1.62099",
+      "sl": "1.61684",
+      "tp1": "1.62453"
+    },
+    {
+      "pair": "EURGBP",
+      "price": "0.85816",
+      "change_pct": 0.0303,
+      "bias": "bear",
+      "priority": false,
+      "rsi": 41.1,
+      "ma_label": "Mixed",
+      "ma_bull": [
+        false,
+        false,
+        true
+      ],
+      "pivots": {
+        "pp": "0.85848",
+        "r1": "0.86065",
+        "r2": "0.86339",
+        "s1": "0.85574",
+        "s2": "0.85357"
+      },
+      "note": "Sát PP từ dưới, 1/3 MA hỗ trợ, → bias giảm",
+      "entry": "0.85816",
+      "sl": "0.86065",
+      "tp1": "0.85574"
+    },
+    {
+      "pair": "EURSGD",
+      "price": "1.45273",
+      "change_pct": 0.0055,
+      "bias": "bear",
+      "priority": true,
+      "rsi": 35.8,
+      "ma_label": "Bearish",
+      "ma_bull": [
+        false,
+        false,
+        false
+      ],
+      "pivots": {
+        "pp": "1.45354",
+        "r1": "1.45539",
+        "r2": "1.45812",
+        "s1": "1.45081",
+        "s2": "1.44896"
+      },
+      "note": "Dưới PP, dưới tất cả MA, RSI yếu, → bias giảm",
+      "entry": "1.45273",
+      "sl": "1.45539",
+      "tp1": "1.45081"
+    },
+    {
+      "pair": "EURJPY",
+      "price": "178.88",
+      "change_pct": -0.0337,
+      "bias": "bear",
+      "priority": true,
+      "rsi": 43.0,
+      "ma_label": "Bearish",
+      "ma_bull": [
+        false,
+        false,
+        false
+      ],
+      "pivots": {
+        "pp": "178.95",
+        "r1": "179.74",
+        "r2": "180.52",
+        "s1": "178.18",
+        "s2": "177.39"
+      },
+      "note": "Sát PP từ dưới, dưới tất cả MA, → bias giảm",
+      "entry": "178.88",
+      "sl": "179.74",
+      "tp1": "178.18"
+    },
+    {
+      "pair": "GBPJPY",
+      "price": "208.44",
+      "change_pct": -0.0715,
+      "bias": "neutral",
+      "priority": false,
+      "rsi": 46.4,
+      "ma_label": "Mixed",
+      "ma_bull": [
+        true,
+        false,
+        false
+      ],
+      "pivots": {
+        "pp": "208.43",
+        "r1": "209.20",
+        "r2": "209.78",
+        "s1": "207.84",
+        "s2": "207.07"
       },
       "note": "Trên PP, 1/3 MA hỗ trợ, → chờ tín hiệu"
     },
     {
-      "pair": "EURAUD",
-      "price": "1.62083",
-      "change_pct": -0.1848,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 52.1,
-      "ma_label": "Mixed",
-      "ma_bull": [
-        false,
-        true,
-        true
-      ],
-      "pivots": {
-        "pp": "1.62247",
-        "r1": "1.62699",
-        "r2": "1.63034",
-        "s1": "1.61912",
-        "s2": "1.61460"
-      },
-      "note": "Dưới PP, 2/3 MA hỗ trợ, → chờ tín hiệu"
-    },
-    {
-      "pair": "EURGBP",
-      "price": "0.85989",
-      "change_pct": -0.0802,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 50.2,
-      "ma_label": "Mixed",
-      "ma_bull": [
-        false,
-        true,
-        true
-      ],
-      "pivots": {
-        "pp": "0.86039",
-        "r1": "0.86180",
-        "r2": "0.86297",
-        "s1": "0.85922",
-        "s2": "0.85781"
-      },
-      "note": "Dưới PP, 2/3 MA hỗ trợ, → chờ tín hiệu"
-    },
-    {
-      "pair": "EURSGD",
-      "price": "1.45560",
-      "change_pct": 0.0873,
-      "bias": "bear",
-      "priority": true,
-      "rsi": 44.3,
-      "ma_label": "Bearish",
-      "ma_bull": [
-        false,
-        false,
-        false
-      ],
-      "pivots": {
-        "pp": "1.45534",
-        "r1": "1.45822",
-        "r2": "1.46207",
-        "s1": "1.45149",
-        "s2": "1.44861"
-      },
-      "note": "Trên PP, dưới tất cả MA, → bias giảm",
-      "entry": "1.45560",
-      "sl": "1.45822",
-      "tp1": "1.45149"
-    },
-    {
-      "pair": "EURJPY",
-      "price": "179.67",
-      "change_pct": 0.3243,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 52.6,
-      "ma_label": "Mixed",
-      "ma_bull": [
-        true,
-        false,
-        false
-      ],
-      "pivots": {
-        "pp": "179.17",
-        "r1": "179.51",
-        "r2": "179.91",
-        "s1": "178.76",
-        "s2": "178.43"
-      },
-      "note": "Giữa R1–R2, 1/3 MA hỗ trợ, đang tăng mạnh, → chờ tín hiệu"
-    },
-    {
-      "pair": "GBPJPY",
-      "price": "208.95",
-      "change_pct": 0.4126,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 52.8,
-      "ma_label": "Mixed",
-      "ma_bull": [
-        true,
-        false,
-        false
-      ],
-      "pivots": {
-        "pp": "208.23",
-        "r1": "208.37",
-        "r2": "208.64",
-        "s1": "207.95",
-        "s2": "207.81"
-      },
-      "note": "Vượt R2, 1/3 MA hỗ trợ, đang tăng mạnh, → chờ tín hiệu"
-    },
-    {
       "pair": "GBPAUD",
-      "price": "1.88492",
-      "change_pct": -0.0806,
-      "bias": "neutral",
-      "priority": false,
-      "rsi": 52.7,
-      "ma_label": "Mixed",
+      "price": "1.88889",
+      "change_pct": -0.0048,
+      "bias": "bull",
+      "priority": true,
+      "rsi": 50.9,
+      "ma_label": "Bullish",
       "ma_bull": [
-        false,
+        true,
         true,
         true
       ],
       "pivots": {
-        "pp": "1.88554",
-        "r1": "1.89016",
-        "r2": "1.89408",
-        "s1": "1.88162",
-        "s2": "1.87700"
+        "pp": "1.88804",
+        "r1": "1.89263",
+        "r2": "1.89628",
+        "s1": "1.88439",
+        "s2": "1.87980"
       },
-      "note": "Sát PP từ dưới, 2/3 MA hỗ trợ, → chờ tín hiệu"
+      "note": "Trên PP, tất cả MA hỗ trợ, → bias tăng",
+      "entry": "1.88889",
+      "sl": "1.88439",
+      "tp1": "1.89263"
     },
     {
       "pair": "XAUUSD",
-      "price": "4196.39",
-      "change_pct": -2.074,
+      "price": "4129.84",
+      "change_pct": 0.3621,
       "bias": "bear",
       "priority": true,
-      "rsi": 17.5,
+      "rsi": 21.0,
       "ma_label": "Bearish",
       "ma_bull": [
         false,
@@ -345,16 +369,16 @@
         false
       ],
       "pivots": {
-        "pp": "4285.98",
-        "r1": "4286.74",
-        "r2": "4287.27",
-        "s1": "4285.46",
-        "s2": "4284.70"
+        "pp": "4171.43",
+        "r1": "4231.05",
+        "r2": "4347.03",
+        "s1": "4055.45",
+        "s2": "3995.82"
       },
-      "note": "Phá S2, dưới tất cả MA, RSI oversold, đang giảm mạnh, → bias giảm",
-      "entry": "4196.39",
-      "sl": "4286.74",
-      "tp1": "4285.46"
+      "note": "Dưới PP, dưới tất cả MA, RSI oversold, đang tăng mạnh, → bias giảm",
+      "entry": "4129.84",
+      "sl": "4231.05",
+      "tp1": "4055.45"
     }
   ]
 }
